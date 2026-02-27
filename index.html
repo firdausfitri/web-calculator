@@ -85,7 +85,53 @@
         0 25px 45px rgba(95, 58, 20, 0.25);
       padding: 18px;
       position: relative;
-      animation: pop-in 0.55s cubic-bezier(0.22, 1.2, 0.37, 1);
+      opacity: 0;
+      transform: translateY(20px) scale(0.97);
+    }
+
+    body.loaded .calc {
+      animation: calc-entrance 0.6s cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
+    }
+
+    .calc > * {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    body.loaded .calc > * {
+      animation: section-fade-in 0.48s ease forwards;
+    }
+
+    body.loaded .calc > *:nth-child(1) { animation-delay: 0.15s; }
+    body.loaded .calc > *:nth-child(2) { animation-delay: 0.26s; }
+    body.loaded .calc > *:nth-child(3) { animation-delay: 0.38s; }
+    body.loaded .calc > *:nth-child(4) { animation-delay: 0.48s; }
+
+    .brand {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .brand-logo {
+      width: 78px;
+      height: 78px;
+      object-fit: contain;
+      border-radius: 50%;
+      border: 3px solid #fff4d6;
+      background: #ffffffc7;
+      box-shadow: 0 6px 0 #d08a41;
+      padding: 8px;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: #3e2f2b;
+      text-shadow: 0 1px 0 #fff3cf;
     }
 
     .calc::before {
@@ -111,6 +157,10 @@
       justify-items: end;
       overflow: hidden;
       position: relative;
+    }
+
+    .display.shake {
+      animation: error-shake 0.28s ease-in-out;
     }
 
     .display::after {
@@ -143,6 +193,10 @@
       letter-spacing: 0.02em;
     }
 
+    .output.value-fade {
+      animation: output-fade 0.2s ease;
+    }
+
     .keys {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -159,15 +213,24 @@
       cursor: pointer;
       color: var(--text);
       background: linear-gradient(180deg, var(--num-top), var(--num-bottom));
+      background-size: 100% 200%;
+      background-position: 0 0;
       box-shadow: 0 4px 0 #d9a13b;
-      transition: transform 0.08s ease, filter 0.2s ease;
+      transition: background-position 0.22s ease, transform 0.12s ease, filter 0.22s ease, box-shadow 0.12s ease;
     }
 
-    button:hover { filter: brightness(1.04); }
+    button:hover {
+      filter: brightness(1.04);
+      background-position: 0 100%;
+    }
 
     button:active {
       transform: translateY(3px);
       box-shadow: 0 1px 0 #d9a13b;
+    }
+
+    button.click-pop {
+      animation: click-pop 0.14s ease;
     }
 
     .op {
@@ -197,11 +260,32 @@
 
     .danger:active { box-shadow: 0 1px 0 #9d304a; }
 
-    .span-2 { grid-column: span 2; }
+    @keyframes calc-entrance {
+      0% { transform: translateY(20px) scale(0.97); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
 
-    @keyframes pop-in {
-      0% { transform: scale(0.86) rotate(-1deg); opacity: 0; }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    @keyframes section-fade-in {
+      0% { transform: translateY(14px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes click-pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes output-fade {
+      0% { opacity: 0.45; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes error-shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
     }
 
     @keyframes float {
@@ -212,6 +296,11 @@
 </head>
 <body>
   <main class="calc" aria-label="Calculator">
+    <header class="brand">
+      <img class="brand-logo" src="assets/images/pandailogo.png" alt="Panda logo" />
+      <p class="brand-title">Panda Calculator</p>
+    </header>
+
     <section class="display">
       <div class="history" id="history"></div>
       <div class="output" id="output">0</div>
@@ -221,7 +310,7 @@
       <button class="danger" data-action="clear">AC</button>
       <button class="danger" data-action="delete">DEL</button>
       <button class="op" data-action="percent">%</button>
-      <button class="op" data-value="/">/</button>
+      <button class="op" data-value="/">&divide;</button>
 
       <button data-value="7">7</button>
       <button data-value="8">8</button>
@@ -249,6 +338,7 @@
     const output = document.getElementById('output');
     const history = document.getElementById('history');
     const keys = document.querySelector('.keys');
+    const display = document.querySelector('.display');
 
     let current = '0';
     let first = null;
@@ -304,9 +394,46 @@
       return num.toString();
     }
 
+    function formatOperator(op) {
+      return op === '/' ? '\u00F7' : op;
+    }
+
+    function animateOutputChange() {
+      output.classList.remove('value-fade');
+      void output.offsetWidth;
+      output.classList.add('value-fade');
+    }
+
+    function animateError() {
+      display.classList.remove('shake');
+      void display.offsetWidth;
+      display.classList.add('shake');
+    }
+
+    function animateButtonPress(btn) {
+      if (!btn) return;
+      btn.classList.remove('click-pop');
+      void btn.offsetWidth;
+      btn.classList.add('click-pop');
+    }
+
+    function getButtonByInput(value, action) {
+      if (value === '.') return keys.querySelector('button[data-value="."]');
+      if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/'].includes(value)) {
+        return keys.querySelector(`button[data-value="${value}"]`);
+      }
+      if (action === 'equals') return keys.querySelector('button[data-action="equals"]');
+      if (action === 'delete') return keys.querySelector('button[data-action="delete"]');
+      if (action === 'clear') return keys.querySelector('button[data-action="clear"]');
+      return null;
+    }
+
     function updateDisplay() {
+      const hasChanged = output.textContent !== current;
       output.textContent = current;
-      history.textContent = first !== null && operator ? `${first} ${operator}` : '';
+      history.textContent = first !== null && operator ? `${first} ${formatOperator(operator)}` : '';
+      if (hasChanged) animateOutputChange();
+      if (current === 'Error') animateError();
     }
 
     function inputNumber(num) {
@@ -364,7 +491,7 @@
     function runEquals() {
       if (!operator || first === null) return;
       const result = calculate(first, current, operator);
-      history.textContent = `${first} ${operator} ${current} =`;
+      history.textContent = `${first} ${formatOperator(operator)} ${current} =`;
       current = formatNumber(result);
       first = null;
       operator = null;
@@ -397,6 +524,7 @@
       else if (action === 'percent') toPercent();
 
       playButtonSound(value, action);
+      animateButtonPress(btn);
       updateDisplay();
     });
 
@@ -425,7 +553,12 @@
       } else return;
 
       playButtonSound(value, action);
+      animateButtonPress(getButtonByInput(value, action));
       updateDisplay();
+    });
+
+    window.addEventListener('load', () => {
+      document.body.classList.add('loaded');
     });
 
     updateDisplay();
