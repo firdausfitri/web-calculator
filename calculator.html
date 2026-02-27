@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Calculator</title>
+  <style>
+    :root {
+      --sky-top: #8ed7ff;
+      --sky-mid: #ffe39b;
+      --sky-bottom: #ffd0b7;
+      --card-top: #fff8f0;
+      --card-bottom: #ffe7d5;
+      --text: #2f2942;
+      --display-top: #4e7de6;
+      --display-bottom: #2d5fd4;
+      --display-text: #ffffff;
+      --display-sub: #cfe3ff;
+      --num-top: #ffffff;
+      --num-bottom: #fff0d8;
+      --num-border: #f6bb52;
+      --op-top: #9ed6ff;
+      --op-bottom: #78c0ff;
+      --op-border: #2d83d1;
+      --danger-top: #ff9dab;
+      --danger-bottom: #ff7890;
+      --danger-border: #c5405f;
+      --equal-top: #77e0a2;
+      --equal-bottom: #41c97e;
+      --equal-border: #259d5b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 16% 18%, #ffffffa0 0 8%, transparent 10%),
+        radial-gradient(circle at 80% 24%, #ffffff90 0 7%, transparent 9%),
+        radial-gradient(circle at 24% 78%, #ffffff80 0 6%, transparent 8%),
+        linear-gradient(180deg, var(--sky-top), var(--sky-mid) 48%, var(--sky-bottom));
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      z-index: -1;
+      filter: blur(1px);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    body::before {
+      width: 170px;
+      height: 170px;
+      background: #ffffff66;
+      top: 10%;
+      left: 7%;
+    }
+
+    body::after {
+      width: 220px;
+      height: 220px;
+      background: #ffffff59;
+      bottom: 6%;
+      right: 8%;
+      animation-delay: 1.4s;
+    }
+
+    .calc {
+      width: min(370px, 100%);
+      background: linear-gradient(180deg, var(--card-top), var(--card-bottom));
+      border-radius: 26px;
+      border: 4px solid #fff4d6;
+      box-shadow:
+        0 14px 0 #d08a41,
+        0 25px 45px rgba(95, 58, 20, 0.25);
+      padding: 18px;
+      position: relative;
+      animation: pop-in 0.55s cubic-bezier(0.22, 1.2, 0.37, 1);
+    }
+
+    .calc::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 20px;
+      border: 2px dashed #ffd89f;
+      pointer-events: none;
+    }
+
+    .display {
+      background: linear-gradient(180deg, var(--display-top), var(--display-bottom));
+      color: var(--display-text);
+      border-radius: 16px;
+      border: 3px solid #7fb1ff;
+      box-shadow: inset 0 3px 0 #ffffff40;
+      padding: 16px;
+      margin-bottom: 14px;
+      min-height: 92px;
+      display: grid;
+      align-content: center;
+      justify-items: end;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .display::after {
+      content: "";
+      position: absolute;
+      top: -40%;
+      left: -35%;
+      width: 70%;
+      height: 180%;
+      background: linear-gradient(100deg, #ffffff00, #ffffff40, #ffffff00);
+      transform: rotate(16deg);
+      pointer-events: none;
+    }
+
+    .history {
+      color: var(--display-sub);
+      font-size: 0.9rem;
+      min-height: 1.2em;
+      font-weight: 700;
+    }
+
+    .output {
+      font-size: 2.1rem;
+      font-weight: 800;
+      max-width: 100%;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      text-shadow: 0 2px 0 #204aa8;
+      letter-spacing: 0.02em;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      border-radius: 14px;
+      border: 3px solid var(--num-border);
+      padding: 14px 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--num-top), var(--num-bottom));
+      box-shadow: 0 4px 0 #d9a13b;
+      transition: transform 0.08s ease, filter 0.2s ease;
+    }
+
+    button:hover { filter: brightness(1.04); }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #d9a13b;
+    }
+
+    .op {
+      background: linear-gradient(180deg, var(--op-top), var(--op-bottom));
+      border-color: var(--op-border);
+      box-shadow: 0 4px 0 #2a72b5;
+      color: #123b64;
+    }
+
+    .op:active { box-shadow: 0 1px 0 #2a72b5; }
+
+    .accent {
+      background: linear-gradient(180deg, var(--equal-top), var(--equal-bottom));
+      border-color: var(--equal-border);
+      box-shadow: 0 4px 0 #1f844d;
+      color: #09311c;
+    }
+
+    .accent:active { box-shadow: 0 1px 0 #1f844d; }
+
+    .danger {
+      background: linear-gradient(180deg, var(--danger-top), var(--danger-bottom));
+      border-color: var(--danger-border);
+      box-shadow: 0 4px 0 #9d304a;
+      color: #501626;
+    }
+
+    .danger:active { box-shadow: 0 1px 0 #9d304a; }
+
+    .span-2 { grid-column: span 2; }
+
+    @keyframes pop-in {
+      0% { transform: scale(0.86) rotate(-1deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="calc" aria-label="Calculator">
+    <section class="display">
+      <div class="history" id="history"></div>
+      <div class="output" id="output">0</div>
+    </section>
+
+    <section class="keys">
+      <button class="danger" data-action="clear">AC</button>
+      <button class="danger" data-action="delete">DEL</button>
+      <button class="op" data-action="percent">%</button>
+      <button class="op" data-value="/">/</button>
+
+      <button data-value="7">7</button>
+      <button data-value="8">8</button>
+      <button data-value="9">9</button>
+      <button class="op" data-value="*">x</button>
+
+      <button data-value="4">4</button>
+      <button data-value="5">5</button>
+      <button data-value="6">6</button>
+      <button class="op" data-value="-">-</button>
+
+      <button data-value="1">1</button>
+      <button data-value="2">2</button>
+      <button data-value="3">3</button>
+      <button class="op" data-value="+">+</button>
+
+      <button data-action="negate">+/-</button>
+      <button data-value="0">0</button>
+      <button data-value=".">.</button>
+      <button class="accent" data-action="equals">=</button>
+    </section>
+  </main>
+
+  <script>
+    const output = document.getElementById('output');
+    const history = document.getElementById('history');
+    const keys = document.querySelector('.keys');
+
+    let current = '0';
+    let first = null;
+    let operator = null;
+    let shouldReset = false;
+    let audioCtx = null;
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        audioCtx = new AudioCtx();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playTone(freq = 440, duration = 0.06, type = 'sine', volume = 0.03) {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    }
+
+    function playEqualsSound() {
+      playTone(620, 0.05, 'triangle', 0.035);
+      setTimeout(() => playTone(760, 0.08, 'triangle', 0.03), 45);
+    }
+
+    function playButtonSound(value, action) {
+      if (value >= '0' && value <= '9') playTone(520, 0.04, 'triangle', 0.025);
+      else if (value === '.') playTone(480, 0.04, 'triangle', 0.025);
+      else if (['+', '-', '*', '/'].includes(value)) playTone(330, 0.06, 'square', 0.03);
+      else if (action === 'equals') playEqualsSound();
+      else if (action === 'clear' || action === 'delete') playTone(250, 0.06, 'sawtooth', 0.02);
+      else if (action === 'negate' || action === 'percent') playTone(410, 0.05, 'sine', 0.025);
+    }
+
+    function formatNumber(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return 'Error';
+      return num.toString();
+    }
+
+    function updateDisplay() {
+      output.textContent = current;
+      history.textContent = first !== null && operator ? `${first} ${operator}` : '';
+    }
+
+    function inputNumber(num) {
+      if (shouldReset) {
+        current = num;
+        shouldReset = false;
+        return;
+      }
+      current = current === '0' ? num : current + num;
+    }
+
+    function inputDot() {
+      if (shouldReset) {
+        current = '0.';
+        shouldReset = false;
+        return;
+      }
+      if (!current.includes('.')) current += '.';
+    }
+
+    function clearAll() {
+      current = '0';
+      first = null;
+      operator = null;
+      shouldReset = false;
+    }
+
+    function deleteOne() {
+      if (shouldReset) return;
+      current = current.length > 1 ? current.slice(0, -1) : '0';
+    }
+
+    function calculate(a, b, op) {
+      const x = Number(a);
+      const y = Number(b);
+      if (op === '+') return x + y;
+      if (op === '-') return x - y;
+      if (op === '*') return x * y;
+      if (op === '/') return y === 0 ? NaN : x / y;
+      return y;
+    }
+
+    function setOperator(nextOp) {
+      if (operator && !shouldReset) {
+        const result = calculate(first, current, operator);
+        current = formatNumber(result);
+        first = current;
+      } else {
+        first = current;
+      }
+      operator = nextOp;
+      shouldReset = true;
+    }
+
+    function runEquals() {
+      if (!operator || first === null) return;
+      const result = calculate(first, current, operator);
+      history.textContent = `${first} ${operator} ${current} =`;
+      current = formatNumber(result);
+      first = null;
+      operator = null;
+      shouldReset = true;
+    }
+
+    function toggleNegate() {
+      if (current === '0') return;
+      current = current.startsWith('-') ? current.slice(1) : '-' + current;
+    }
+
+    function toPercent() {
+      current = formatNumber(Number(current) / 100);
+    }
+
+    keys.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const value = btn.dataset.value;
+      const action = btn.dataset.action;
+
+      if (value >= '0' && value <= '9') inputNumber(value);
+      else if (value === '.') inputDot();
+      else if (['+', '-', '*', '/'].includes(value)) setOperator(value);
+      else if (action === 'equals') runEquals();
+      else if (action === 'clear') clearAll();
+      else if (action === 'delete') deleteOne();
+      else if (action === 'negate') toggleNegate();
+      else if (action === 'percent') toPercent();
+
+      playButtonSound(value, action);
+      updateDisplay();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      let value = null;
+      let action = null;
+
+      if (e.key >= '0' && e.key <= '9') {
+        inputNumber(e.key);
+        value = e.key;
+      } else if (e.key === '.') {
+        inputDot();
+        value = '.';
+      } else if (['+', '-', '*', '/'].includes(e.key)) {
+        setOperator(e.key);
+        value = e.key;
+      } else if (e.key === 'Enter' || e.key === '=') {
+        runEquals();
+        action = 'equals';
+      } else if (e.key === 'Backspace') {
+        deleteOne();
+        action = 'delete';
+      } else if (e.key === 'Escape') {
+        clearAll();
+        action = 'clear';
+      } else return;
+
+      playButtonSound(value, action);
+      updateDisplay();
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>
